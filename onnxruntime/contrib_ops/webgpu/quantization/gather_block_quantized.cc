@@ -20,6 +20,24 @@ Status GatherBlockQuantizedProgram::GenerateShaderCode(ShaderHelper& shader) con
   const auto& scales = shader.AddInput("scales", ShaderUsage::UseUniform | ShaderUsage::UseIndicesTypeAlias | ShaderUsage::UseValueTypeAlias);
   const auto& output = shader.AddOutput("output", ShaderUsage::UseUniform | ShaderUsage::UseShapeAndStride | ShaderUsage::UseValueTypeAlias);
 
+
+  # if false
+  const std::string unpack = (is_signed_) ? "unpack4xI8" : "unpack4xU8";
+  const std::string default_zero_point = is_uint8_ ? "input_element_t(0)" : "input_element_t(0)";
+  if (has_zeropoint_) {
+    const auto& zero_point = shader.AddInput("zero_point", ShaderUsage::UseUniform | ShaderUsage::UseIndicesTypeAlias);
+  }
+  return WGSL_TEMPLATE_APPLY(shader, "../../contrib_ops/webgpu/quantization/gather_block_quantized.wgsl.template",
+                             WGSL_TEMPLATE_PARAMETER(indices_rank, indices_rank_),
+                             WGSL_TEMPLATE_VARIABLE(unpack, unpack),
+                             WGSL_TEMPLATE_VARIABLE(default_zero_point, default_zero_point),
+                             WGSL_TEMPLATE_PARAMETER(is_signed, is_signed_),
+                             WGSL_TEMPLATE_PARAMETER(is_uint8, is_uint8_),
+                             WGSL_TEMPLATE_VARIABLE(x, x),
+                             WGSL_TEMPLATE_VARIABLE(indices, indices),
+                             WGSL_TEMPLATE_VARIABLE(scales, scales),
+                             WGSL_TEMPLATE_VARIABLE(output, output));
+  #else
   shader.MainFunctionBody()
       << shader.GuardAgainstOutOfBoundsWorkgroupSizes("uniforms.output_size")
       << "let output_indices = " << output.OffsetToIndices("global_idx") << ";\n";
@@ -89,6 +107,7 @@ Status GatherBlockQuantizedProgram::GenerateShaderCode(ShaderHelper& shader) con
   shader.MainFunctionBody()
       << "  let dequantized_data = (output_value_t(quantized_data) - output_value_t(zero_point)) * scale;\n  "
       << output.SetByOffset("global_idx", "dequantized_data") << ";\n";
+#endif
 
   return Status::OK();
 }
