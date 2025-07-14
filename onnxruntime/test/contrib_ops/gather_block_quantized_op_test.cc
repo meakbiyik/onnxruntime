@@ -100,7 +100,8 @@ void RunGatherBlockQuantized(const std::vector<T1>& data,
                              const int64_t bits,
                              const std::vector<T2>& output,
                              const std::vector<int64_t>& output_shape,
-                             OpTester::ExpectResult expect_result = OpTester::ExpectResult::kExpectSuccess) {
+                             OpTester::ExpectResult expect_result = OpTester::ExpectResult::kExpectSuccess,
+                             const bool touch_on_device_data = false) {
   CheckDataAndShape<T1>(data, data_shape, "data in RunGatherBlockQuantized");
   CheckDataAndShape<Tind>(indices, indices_shape, "indices in RunGatherBlockQuantized");
   CheckDataAndShape<T2>(scales, scales_shape, "scales in RunGatherBlockQuantized");
@@ -126,9 +127,12 @@ void RunGatherBlockQuantized(const std::vector<T1>& data,
 
     test.AddOutput<T2>("output", output_shape, output);
 
-    std::vector<std::unique_ptr<IExecutionProvider>> eps;
-    eps.push_back(DefaultCpuExecutionProvider());
-    test.Run(expect_result, "", {}, nullptr, &eps);
+    if (touch_on_device_data) {
+      // test would need to see data on device
+      test.Run(expect_result, "", {kWebGpuExecutionProvider}, nullptr);
+    } else {
+      test.Run(expect_result, "");
+    }
   };
 
   run_test(false);
@@ -181,7 +185,8 @@ void RunUnpackedData(
     const int64_t bits,
     const std::vector<float>& output,
     const std::vector<int64_t>& output_shape,
-    bool expect_success) {
+    bool expect_success,
+    const bool touch_on_device_data = false) {
   CheckDataAndShape<int>(unpacked_data, unpacked_data_shape, "unpacked_data");
   CheckDataAndShape<int>(indices, indices_shape, "indices");
   CheckDataAndShape<float>(scales, scales_shape, "scales");
@@ -214,7 +219,8 @@ void RunUnpackedData(
                             bits,
                             ToType<T2>(output),
                             output_shape,
-                            expect_result);
+                            expect_result,
+                            touch_on_device_data);
     return;
   }
 
@@ -400,7 +406,7 @@ void Test_InvalidIndices_WithZeroPoints() {
   constexpr int64_t block_size = 16;
   constexpr int64_t bits = 4;
   RunUnpackedData<T1, T2, Tind>(data, data_shape, indices, indices_shape, scales, scales_shape, zero_points,
-                                gather_axis, quantize_axis, block_size, bits, output, output_shape, false);
+                                gather_axis, quantize_axis, block_size, bits, output, output_shape, false, true);
 }
 
 TEST(GatherBlockQuantizedOpTest, InvalidIndices) {
