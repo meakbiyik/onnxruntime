@@ -48,7 +48,9 @@ class GatherBlockQuantized final : public WebGpuKernel {
     gather_axis_ = static_cast<int>(info.GetAttrOrDefault<int64_t>("gather_axis", 0));
     block_size_ = static_cast<int>(info.GetAttrOrDefault<int64_t>("block_size", 128));
     quantize_axis_ = static_cast<int>(info.GetAttrOrDefault<int64_t>("quantize_axis", 1));
+    bits_ = static_cast<int>(info.GetAttrOrDefault<int64_t>("bits", 0));
 
+    ORT_ENFORCE(bits_ == 4 || bits_ == 8, "'bits' must be 4 or 8.");
     ORT_ENFORCE(block_size_ >= 16 && ((block_size_ - 1) & block_size_) == 0,
                 "'block_size' must be 2's power and not less than 16.");
   }
@@ -59,6 +61,7 @@ class GatherBlockQuantized final : public WebGpuKernel {
   int gather_axis_;
   int quantize_axis_;
   int block_size_;
+  int bits_;
 };
 
 }  // namespace webgpu

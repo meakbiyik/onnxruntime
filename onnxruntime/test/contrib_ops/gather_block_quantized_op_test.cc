@@ -101,7 +101,7 @@ void RunGatherBlockQuantized(const std::vector<T1>& data,
                              const std::vector<T2>& output,
                              const std::vector<int64_t>& output_shape,
                              OpTester::ExpectResult expect_result = OpTester::ExpectResult::kExpectSuccess,
-                             const bool touch_on_device_data = false) {
+                             bool touch_on_device_data = false) {
   CheckDataAndShape<T1>(data, data_shape, "data in RunGatherBlockQuantized");
   CheckDataAndShape<Tind>(indices, indices_shape, "indices in RunGatherBlockQuantized");
   CheckDataAndShape<T2>(scales, scales_shape, "scales in RunGatherBlockQuantized");
@@ -186,7 +186,7 @@ void RunUnpackedData(
     const std::vector<float>& output,
     const std::vector<int64_t>& output_shape,
     bool expect_success,
-    const bool touch_on_device_data = false) {
+    bool touch_on_device_data = false) {
   CheckDataAndShape<int>(unpacked_data, unpacked_data_shape, "unpacked_data");
   CheckDataAndShape<int>(indices, indices_shape, "indices");
   CheckDataAndShape<float>(scales, scales_shape, "scales");
@@ -245,7 +245,8 @@ void RunUnpackedData(
                           bits,
                           ToType<T2>(output),
                           output_shape,
-                          expect_result);
+                          expect_result,
+                          touch_on_device_data);
 }
 
 template <typename T1, typename T2, typename Tind>
